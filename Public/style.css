@@ -119,12 +119,11 @@
 /* Bar Colors (Updated to Dark Mode Palette) */
 .gantt-bar[data-color="blue"] { background-color: #2E7BB1; } /* Dark Blue */
 .gantt-bar[data-color="ochre"] { background-color: #EE9E20; } /* Gold/Ochre */
-.gantt-bar[data-color="orange"] { background-color: #BA3930; } /* Red */
+.gantt-bar[data-color="orange"] { background-color: #da291c; } /* Red */
 .gantt-bar[data-color="green"] { background-color: #50AF7B; } /* Green */
-.gantt-bar[data-color="default"] { background-color: #874E61; } /* Default/Purple */
 
-/* Note: The five color names map to the first five colors you provided. 
-   I used #874E61 for the 'default' color as a sixth distinct color in the palette. */
+/* Note: The four color names map to the first four colors you provided. 
+   I used #da291c for the 'default' color as a sixth distinct color in the palette. */
 
 /* 13. Export Button Styling */
 .export-container {
