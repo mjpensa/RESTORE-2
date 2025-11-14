@@ -30,6 +30,7 @@
   padding: 16px;
   border-bottom: 1px solid #0D0D0D; /* Grid line color */
   color: #FFFFFF; /* Text Color */
+  background-color: #0c2340; /* Set title background color */
 }
 
 /* 8. Main Grid Layout */
