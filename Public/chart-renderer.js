@@ -739,18 +739,26 @@ function setupChart(ganttData) {
   // --- END: Add BIP Logo ---
 
   // --- NEW: Add Vertical SVG ---
-  // --- FIX: Add inline styles for positioning to avoid CSS load issues ---
-  const verticalSvgEl = document.createElement('div');
-  verticalSvgEl.className = 'gantt-vertical-svg'; // Kept for the svg child rule in CSS
-  verticalSvgEl.innerHTML = verticalSVG;
+  // --- MODIFICATION: Use background-repeat to stretch the SVG vertically ---
+  const encodedVerticalSVG = encodeURIComponent(verticalSVG.replace(/(\r\n|\n|\r)/gm, ""));
   
-  // Add all positioning styles directly via JS
+  const verticalSvgEl = document.createElement('div');
+  verticalSvgEl.className = 'gantt-vertical-svg';
+  
+  // Apply all styles inline, just like the footer
   verticalSvgEl.style.position = 'absolute';
   verticalSvgEl.style.left = '0';
   verticalSvgEl.style.top = '0';
-  verticalSvgEl.style.height = '100%';
+  verticalSvgEl.style.height = '100%'; // Stretches the div
   verticalSvgEl.style.width = '30px';
   verticalSvgEl.style.zIndex = '1';
+
+  // Use background-image to repeat the pattern vertically
+  verticalSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedVerticalSVG}")`;
+  verticalSvgEl.style.backgroundRepeat = 'repeat-y'; // <-- Key change
+  verticalSvgEl.style.backgroundSize = '30px auto'; // <-- Key change
+  
+  // We no longer set innerHTML
   
   chartWrapper.appendChild(verticalSvgEl);
   // --- END: Add Vertical SVG ---
