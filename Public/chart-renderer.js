@@ -8,6 +8,7 @@
 // --- User requested placeholder for vertical SVG ---
 const verticalSVG = `<svg
 width="30" height="1280"
+viewBox="0 0 30 1280"
 xmlns="http://www.w3.org/2000/svg"
 xmlns:xlink="http://www.w3.org/1999/xlink"
 xml:space="preserve" overflow="hidden">
@@ -758,10 +759,6 @@ function setupChart(ganttData) {
   verticalSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedVerticalSVG}")`;
   verticalSvgEl.style.backgroundRepeat = 'repeat-y';
   verticalSvgEl.style.backgroundSize = '30px auto';
-
-  // TEMPORARY DEBUG: Add highly visible background to verify element exists
-  verticalSvgEl.style.backgroundColor = '#FF0000'; // Bright red background for debugging
-  verticalSvgEl.style.opacity = '0.8'; // Make it semi-transparent so we can see it
 
   // Don't append yet - we'll append it after the footer for consistency
   // --- END: Add Vertical SVG ---
