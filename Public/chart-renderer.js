@@ -284,6 +284,42 @@ function setupChart(ganttData) {
   }
   // --- END: Add Legend ---
 
+  // --- NEW: Add Vertical SVG Border ---
+  const verticalBorderEl = document.createElement('div');
+  verticalBorderEl.style.position = 'absolute';
+  verticalBorderEl.style.top = '0';
+  verticalBorderEl.style.right = '0';
+  verticalBorderEl.style.bottom = '0';
+  verticalBorderEl.style.width = '30px'; // The width of the vertical bar
+  verticalBorderEl.style.overflow = 'hidden'; // Hide overflow
+  verticalBorderEl.style.zIndex = '5'; // Place it behind the logo
+
+  const verticalInnerEl = document.createElement('div');
+  
+  // Rotate the inner element so its "width" becomes vertical
+  verticalInnerEl.style.writingMode = 'vertical-rl';
+  verticalInnerEl.style.transform = 'rotate(180deg)';
+
+  // Set its "width" (now vertical) to span the container height
+  // and its "height" (now horizontal) to match the SVG height
+  verticalInnerEl.style.width = '100%'; // This is now the element's height
+  verticalInnerEl.style.height = '30px'; // This is now the element's width
+  verticalInnerEl.style.position = 'absolute';
+  verticalInnerEl.style.top = '0';
+  verticalInnerEl.style.left = '0';
+  
+  // Get the same encoded SVG string as the footer
+  const encodedSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
+  
+  // Apply the same repeating background as the footer
+  verticalInnerEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
+  verticalInnerEl.style.backgroundRepeat = 'repeat-x'; // Repeat along its "width" (now vertical)
+  verticalInnerEl.style.backgroundSize = 'auto 100%'; // Scale height (now width) to 30px
+  
+  verticalBorderEl.appendChild(verticalInnerEl);
+  chartWrapper.appendChild(verticalBorderEl);
+  // --- END: Add Vertical SVG Border ---
+
   // --- NEW: Add Footer SVG ---
   // --- FIX: Apply SVG as a repeating background image to maintain aspect ratio ---
   const footerSvgEl = document.createElement('div');
