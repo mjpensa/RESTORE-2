@@ -285,7 +285,8 @@ function setupChart(ganttData) {
   // --- END: Add Legend ---
 
   // --- NEW: Add Vertical SVG Border ---
-  // --- FINAL FIX: Use a simpler method ---
+  // --- ROOT CAUSE FIX: Re-written to be simple and robust ---
+  // 1. Create the 30px-wide container
   const verticalBorderEl = document.createElement('div');
   verticalBorderEl.style.position = 'absolute';
   verticalBorderEl.style.top = '0';
@@ -293,33 +294,24 @@ function setupChart(ganttData) {
   verticalBorderEl.style.bottom = '0';
   verticalBorderEl.style.width = '30px'; 
   verticalBorderEl.style.zIndex = '5';
-  verticalBorderEl.style.overflow = 'hidden'; // Hide overflow
-
-  // Create an inner element
-  const verticalInnerEl = document.createElement('div');
   
-  // Get the encoded SVG
+  // 2. URL-encode the SVG
   const encodedSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
-  verticalInnerEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
-  
-  // Set the background size to its native dimensions
-  verticalInnerEl.style.backgroundSize = '1280px 30px';
-  // Repeat it horizontally (this is correct)
-  verticalInnerEl.style.backgroundRepeat = 'repeat-x';
 
-  // --- This is the new logic ---
-  // Set the inner element's height to the SVG's *width* (1280px)
-  // and width to the SVG's *height* (30px).
-  verticalInnerEl.style.height = '1280px';
-  verticalInnerEl.style.width = '30px';
+  // 3. Apply background directly to the container
+  verticalBorderEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
   
-  // Rotate the element
-  verticalInnerEl.style.transform = 'rotate(90deg)';
-  // Set the transform origin to the bottom-left corner
-  verticalInnerEl.style.transformOrigin = '0 100%';
-  // --- End new logic ---
+  // 4. Set size to SVG's native dimensions (1280x30)
+  //    This makes the 30px-wide container a "viewport" into the 1280px-wide image.
+  verticalBorderEl.style.backgroundSize = '1280px 30px'; 
   
-  verticalBorderEl.appendChild(verticalInnerEl);
+  // 5. Set repeat to 'repeat-y' (tile vertically)
+  //    This tiles the 30px-tall graphic down the entire height.
+  verticalBorderEl.style.backgroundRepeat = 'repeat-y';
+
+  // 6. Remove all the old, problematic rotation logic.
+  //    (The 'verticalInnerEl' and its transforms are gone).
+
   chartWrapper.appendChild(verticalBorderEl);
   // --- END: Add Vertical SVG Border ---
 
@@ -328,12 +320,11 @@ function setupChart(ganttData) {
   const footerSvgEl = document.createElement('div');
   footerSvgEl.className = 'gantt-footer-svg';
   
-  const encodedSVGFooter = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
-
+  // We can re-use the encoded SVG from the vertical border
   footerSvgEl.style.height = '30px'; 
-  footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVGFooter}")`;
-  footerSvgEl.style.backgroundRepeat = 'repeat-x'; 
-  footerSvgEl.style.backgroundSize = 'auto 30px'; 
+  footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
+  footerSvgEl.style.backgroundRepeat = 'repeat-x'; // Horizontal repeat for footer
+  footerSvgEl.style.backgroundSize = 'auto 30px'; // Native height, auto width
   
   chartWrapper.appendChild(footerSvgEl);
   // --- END: Add Footer SVG ---
