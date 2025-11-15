@@ -738,29 +738,27 @@ function setupChart(ganttData) {
   chartWrapper.appendChild(logoImg);
   // --- END: Add BIP Logo ---
 
-  // --- NEW: Add Vertical SVG ---
+  // --- NEW: Add Vertical SVG (to be positioned later) ---
   // --- MODIFICATION: Use background-repeat to stretch the SVG vertically ---
   const encodedVerticalSVG = encodeURIComponent(verticalSVG.replace(/(\r\n|\n|\r)/gm, ""));
-  
+
   const verticalSvgEl = document.createElement('div');
   verticalSvgEl.className = 'gantt-vertical-svg';
-  
-  // Apply all styles inline, just like the footer
+
+  // Apply all styles inline, matching the footer approach
   verticalSvgEl.style.position = 'absolute';
   verticalSvgEl.style.left = '0';
   verticalSvgEl.style.top = '0';
   verticalSvgEl.style.height = '100%'; // Stretches the div
   verticalSvgEl.style.width = '30px';
-  verticalSvgEl.style.zIndex = '1';
+  verticalSvgEl.style.zIndex = '5'; // Higher z-index to ensure visibility above grid
 
   // Use background-image to repeat the pattern vertically
   verticalSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedVerticalSVG}")`;
-  verticalSvgEl.style.backgroundRepeat = 'repeat-y'; // <-- Key change
-  verticalSvgEl.style.backgroundSize = '30px auto'; // <-- Key change
-  
-  // We no longer set innerHTML
-  
-  chartWrapper.appendChild(verticalSvgEl);
+  verticalSvgEl.style.backgroundRepeat = 'repeat-y';
+  verticalSvgEl.style.backgroundSize = '30px auto';
+
+  // Don't append yet - we'll append it after the footer for consistency
   // --- END: Add Vertical SVG ---
   
   // Add Title (from data)
@@ -851,22 +849,26 @@ function setupChart(ganttData) {
   // --- NEW: Add Footer SVG ---
   // --- FIX: Reverting to the original, fully inline-styled implementation ---
   const encodedFooterSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
-  
+
   const footerSvgEl = document.createElement('div');
   footerSvgEl.className = 'gantt-footer-svg';
-  
+
   // Apply all styles inline, just like the original code
-  footerSvgEl.style.height = '30px'; 
+  footerSvgEl.style.height = '30px';
   footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedFooterSVG}")`;
   footerSvgEl.style.backgroundRepeat = 'repeat-x';
   footerSvgEl.style.backgroundSize = 'auto 30px';
-  
+
   // Also add the new styles for margin/width
   footerSvgEl.style.width = 'calc(100% - 30px)';
   footerSvgEl.style.marginLeft = '30px';
-  
+
   chartWrapper.appendChild(footerSvgEl);
   // --- END: Add Footer SVG ---
+
+  // --- NOW: Append Vertical SVG (after all other content) ---
+  chartWrapper.appendChild(verticalSvgEl);
+  // --- END: Append Vertical SVG ---
   
   // --- Add Export Button ---
   const exportContainer = document.createElement('div');
