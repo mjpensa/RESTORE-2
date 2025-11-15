@@ -20,6 +20,7 @@
   overflow: hidden;
   margin-top: 24px;
   font-family: 'Work Sans', sans-serif; /* CHANGED */
+  position: relative; /* Added for vertical SVG border */
 }
 
 /* 7. Chart Title */
@@ -28,12 +29,12 @@
   font-size: 20px;
   font-weight: 600;
   padding: 16px;
-  border-bottom: 1px solid #FFFFFF; /* CHANGED to white */
-  border-top: 1px solid #FFFFFF; /* ADDED white border */
-  border-left: 1px solid #FFFFFF; /* ADDED white border */
-  border-right: 1px solid #FFFFFF; /* ADDED white border */
+  border-bottom: 1px solid #0D0D0D; /* CHANGED to black */
+  border-top: 1px solid #0D0D0D; /* CHANGED to black */
+  border-left: 1px solid #0D0D0D; /* CHANGED to black */
+  border-right: 1px solid #0D0D0D; /* CHANGED to black */
   color: #FFFFFF; /* Text Color */
-  background-color: #DA291C; /* Set title background color */
+  background-color: #0c2340; /* CHANGED to new color */
 }
 
 /* 8. Main Grid Layout */
@@ -49,10 +50,10 @@
   font-weight: 500;
   padding: 12px 8px;
   text-align: center;
-  background-color: #da291c; /* Set time interval background color */
+  background-color: #0c2340; /* CHANGED to new color */
   border-bottom: 1px solid #0D0D0D; /* Grid line color (Correctly not white) */
-  border-left: 0.5px solid #FFFFFF; /* Grid line color (CHANGED to 0.5px) */
-  border-top: 0.5px solid #FFFFFF; /* CHANGED to 0.5px */
+  border-left: 0.5px solid #0D0D0D; /* Grid line color (CHANGED to black) */
+  border-top: 0.5px solid #0D0D0D; /* CHANGED to black */
   color: #FFFFFF; /* Text Color */
 }
 .gantt-header-label { /* First header cell (empty) */
@@ -494,4 +495,14 @@
 .legend-label {
   font-size: 28px; /* CHANGED from 14px */
   color: #CCCCCC;
+}
+
+/* ------------------------------------------------------------------- */
+/* --- SVG FOOTER (Applied by chart-renderer.js) --- */
+/* ------------------------------------------------------------------- */
+.gantt-footer-svg {
+  /* This class is just a container. 
+     Styles are applied directly via JS.
+  */
+  width: 100%;
 }
