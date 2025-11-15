@@ -51,13 +51,13 @@
   text-align: center;
   background-color: #da291c; /* Set time interval background color */
   border-bottom: 1px solid #0D0D0D; /* Grid line color (Correctly not white) */
-  border-left: 1px solid #FFFFFF; /* Grid line color (CHANGED to white) */
-  border-top: 1px solid #FFFFFF; /* ADDED white top border */
+  border-left: 0.5px solid #FFFFFF; /* Grid line color (CHANGED to 0.5px) */
+  border-top: 0.5px solid #FFFFFF; /* CHANGED to 0.5px */
   color: #FFFFFF; /* Text Color */
 }
 .gantt-header-label { /* First header cell (empty) */
   border-left: 0; /* Keep left border at 0 */
-  border-top: 1px solid #0D0D0D; /* OVERRIDE: Keep top border dark */
+  border-top: 0.5px solid #0D0D0D; /* OVERRIDE: Keep top border dark, changed to 0.5px */
   /* background-color: #28228; */ /* Removed this override */
 }
 
