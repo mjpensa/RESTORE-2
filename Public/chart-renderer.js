@@ -5,8 +5,9 @@
  */
 
 // --- NEW: Store the SVG HTML as a string ---
+// --- FIX: Reverted to intrinsic width/height and added viewBox ---
 const footerSVG = `
-<svg width="100%" height="30" viewBox="0 0 1280 30" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" overflow="hidden">
+<svg width="1280" height="30" viewBox="0 0 1280 30" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" overflow="hidden">
   <g transform="matrix(1 0 0 1 0 -690)">
     <path d="M401.92 14.8852 412.447 25.4116 416.805 29.7703 416.805 14.8852 416.805 0 387.035 0 391.394 4.35868 401.92 14.8852Z" fill="#0C2340" transform="matrix(1 0 0 1.00226 1.194e-13 690.065)"/>
     <path d="M425.489 8.75937 431.628 14.9508 442.104 25.5219 446.318 29.7729 446.347 29.8018 446.578 29.8018 446.578 29.7729 446.578 29.7703 446.578 14.8852 446.578 0 416.805 0 421.146 4.37706 425.489 8.75937Z" fill="#0C2340" transform="matrix(1 0 0 1.00226 1.194e-13 690.065)"/>
@@ -284,9 +285,19 @@ function setupChart(ganttData) {
   // --- END: Add Legend ---
 
   // --- NEW: Add Footer SVG ---
+  // --- FIX: Apply SVG as a repeating background image to maintain aspect ratio ---
   const footerSvgEl = document.createElement('div');
   footerSvgEl.className = 'gantt-footer-svg';
-  footerSvgEl.innerHTML = footerSVG; // Inject the SVG string
+  
+  // URL-encode the SVG string to use in a data URI
+  // We remove newlines and escape special chars
+  const encodedSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
+
+  footerSvgEl.style.height = '30px'; // Set the div height to match the SVG
+  footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
+  footerSvgEl.style.backgroundRepeat = 'repeat-x'; // Repeat horizontally
+  footerSvgEl.style.backgroundSize = 'auto 100%'; // Scale height to fit, width is auto
+  
   chartWrapper.appendChild(footerSvgEl);
   // --- END: Add Footer SVG ---
   
