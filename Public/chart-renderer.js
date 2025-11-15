@@ -734,6 +734,9 @@ function setupChart(ganttData) {
   verticalSvgEl.className = 'gantt-vertical-svg';
 
   // Apply all styles inline, just like the original code
+  verticalSvgEl.style.position = 'absolute';
+  verticalSvgEl.style.left = '0';
+  verticalSvgEl.style.top = '0';
   verticalSvgEl.style.width = '30px';
   verticalSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedVerticalSVG}")`;
   verticalSvgEl.style.backgroundRepeat = 'repeat-y';
