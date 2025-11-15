@@ -700,7 +700,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /**
  * The Dynamic Renderer.
- * This function builds the chart *based on* the data from sessionStorage.
+ * This function builds the chart *based* on* the data from sessionStorage.
  */
 function setupChart(ganttData) {
   
@@ -739,17 +739,18 @@ function setupChart(ganttData) {
   // --- END: Add BIP Logo ---
 
   // --- NEW: Add Vertical SVG ---
-  // --- FIX: Revert to innerHTML. This relies on the .gantt-vertical-svg CSS rules. ---
-  // const encodedVerticalSVG = encodeURIComponent(verticalSVG.replace(/(\r\n|\n|\r)/gm, "")); // <-- REMOVED
-
+  // --- FIX: Add inline styles for positioning to avoid CSS load issues ---
   const verticalSvgEl = document.createElement('div');
-  verticalSvgEl.className = 'gantt-vertical-svg';
-  verticalSvgEl.innerHTML = verticalSVG; // <-- RESTORED. This is correct.
+  verticalSvgEl.className = 'gantt-vertical-svg'; // Kept for the svg child rule in CSS
+  verticalSvgEl.innerHTML = verticalSVG;
   
-  // --- REMOVED incorrect background-image styles ---
-  // verticalSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedVerticalSVG}")`;
-  // verticalSvgEl.style.backgroundRepeat = 'repeat-y';
-  // verticalSvgEl.style.backgroundSize = '30px auto';
+  // Add all positioning styles directly via JS
+  verticalSvgEl.style.position = 'absolute';
+  verticalSvgEl.style.left = '0';
+  verticalSvgEl.style.top = '0';
+  verticalSvgEl.style.height = '100%';
+  verticalSvgEl.style.width = '30px';
+  verticalSvgEl.style.zIndex = '1';
   
   chartWrapper.appendChild(verticalSvgEl);
   // --- END: Add Vertical SVG ---
@@ -840,14 +841,21 @@ function setupChart(ganttData) {
 
 
   // --- NEW: Add Footer SVG ---
-  // 2. URL-encode the SVG
-  const encodedFooterSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, "")); // <-- Correct variable
+  // --- FIX: Reverting to the original, fully inline-styled implementation ---
+  const encodedFooterSVG = encodeURIComponent(footerSVG.replace(/(\r\n|\n|\r)/gm, ""));
   
   const footerSvgEl = document.createElement('div');
   footerSvgEl.className = 'gantt-footer-svg';
   
-  // --- MODIFICATION: Removed dynamic styles, they are now in style.css ---
-  footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedFooterSVG}")`; // <-- Use correct variable
+  // Apply all styles inline, just like the original code
+  footerSvgEl.style.height = '30px'; 
+  footerSvgEl.style.backgroundImage = `url("data:image/svg+xml,${encodedFooterSVG}")`;
+  footerSvgEl.style.backgroundRepeat = 'repeat-x';
+  footerSvgEl.style.backgroundSize = 'auto 30px';
+  
+  // Also add the new styles for margin/width
+  footerSvgEl.style.width = 'calc(100% - 30px)';
+  footerSvgEl.style.marginLeft = '30px';
   
   chartWrapper.appendChild(footerSvgEl);
   // --- END: Add Footer SVG ---
