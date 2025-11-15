@@ -301,12 +301,12 @@ function setupChart(ganttData) {
   // 3. Apply background directly to the container
   verticalBorderEl.style.backgroundImage = `url("data:image/svg+xml,${encodedSVG}")`;
   
-  // 4. Set size to SVG's native dimensions (1280x30)
-  //    This makes the 30px-wide container a "viewport" into the 1280px-wide image.
-  verticalBorderEl.style.backgroundSize = '1280px 30px'; 
+  // 4. Set size to SVG's native height (30px) and auto-scale width
+  //    This is the same as the footer.
+  verticalBorderEl.style.backgroundSize = 'auto 30px'; 
   
   // 5. Set repeat to 'repeat-y' (tile vertically)
-  //    This tiles the 30px-tall graphic down the entire height.
+  //    This will tile the 30px-tall graphic down the side.
   verticalBorderEl.style.backgroundRepeat = 'repeat-y';
 
   // 6. Remove all the old, problematic rotation logic.
