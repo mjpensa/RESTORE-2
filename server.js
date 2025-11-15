@@ -178,7 +178,12 @@ app.post('/generate-chart', upload.array('researchFiles'), async (req, res) => {
           * **IF you use the FALLBACK:** The 'legend' array MUST be an empty array \`[]\`.
   6.  **SANITIZATION:** All string values MUST be valid JSON strings. You MUST properly escape any characters that would break JSON, such as double quotes (\") and newlines (\\n), within the string value itself.`;
   
-  const geminiUserQuery = `User Prompt: "${userPrompt}"\n\nResearch Content:\n${researchTextCache}`;
+  const geminiUserQuery = `User Prompt: "${userPrompt}"
+  
+**CRITICAL REMINDER:** You MUST escape all newlines (\\n) and double-quotes (\") found in the research content before placing them into the final JSON string values.
+
+Research Content:
+${researchTextCache}`;
 
   // 3. Define the schema for the *visual data only*
   const ganttSchema = {
@@ -285,7 +290,12 @@ app.post('/get-task-analysis', async (req, res) => {
   4.  **PROVIDE RATIONALE:** You MUST provide a 'rationale' for 'in-progress' and 'not-started' tasks, analyzing the likelihood of on-time completion based on the 'facts' and 'assumptions'.
   5.  **CLEAN STRINGS:** All string values MUST be valid JSON strings. You MUST properly escape any characters that would break JSON, such as double quotes (\") and newlines (\\n).`;
   
-  const geminiUserQuery = `Research Content:\n${researchTextCache}\n\n**YOUR TASK:** Provide a full, detailed analysis for this specific task:
+  const geminiUserQuery = `**CRITICAL REMINDER:** You MUST escape all newlines (\\n) and double-quotes (\") found in the research content before placing them into the final JSON string values.
+
+Research Content:
+${researchTextCache}
+
+**YOUR TASK:** Provide a full, detailed analysis for this specific task:
   - Entity: "${entity}"
   - Task Name: "${taskName}"`;
 
@@ -398,4 +408,4 @@ app.post('/ask-question', async (req, res) => {
 // --- Server Start ---
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
-});   
+});
