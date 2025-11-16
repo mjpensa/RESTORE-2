@@ -750,27 +750,37 @@ function setupChart(ganttData) {
     // Remove overflow="hidden" which might be clipping the content
     svgElement.removeAttribute('overflow');
 
+    // EXPERIMENTAL: Remove viewBox to see if content appears without coordinate system restrictions
+    const originalViewBox = svgElement.getAttribute('viewBox');
+    svgElement.removeAttribute('viewBox');
+
+    // Also remove the width/height attributes to let CSS control sizing
+    svgElement.removeAttribute('width');
+    svgElement.removeAttribute('height');
+
     // Set preserveAspectRatio to "none" so SVG stretches to fill container
     svgElement.setAttribute('preserveAspectRatio', 'none');
     svgElement.style.display = 'block';
     svgElement.style.width = '100%';
     svgElement.style.height = '100%';
-    console.log('Vertical SVG element created and styled');
-    console.log('SVG viewBox:', svgElement.getAttribute('viewBox'));
-    console.log('SVG children count:', svgElement.children.length);
-    console.log('First child:', svgElement.children[0]);
 
-    try {
-      console.log('SVG bounding box:', svgElement.getBBox());
-    } catch(e) {
-      console.log('Could not get bounding box:', e.message);
-    }
+    console.log('Vertical SVG element created and styled');
+    console.log('Original viewBox (removed):', originalViewBox);
+    console.log('SVG children count:', svgElement.children.length);
 
     // Check if <g> element exists
     const gElement = svgElement.querySelector('g');
     if (gElement) {
       console.log('Found <g> element with transform:', gElement.getAttribute('transform'));
       console.log('Paths in <g>:', gElement.querySelectorAll('path').length);
+
+      // Get bounding box of the <g> element instead
+      try {
+        const gBox = gElement.getBBox();
+        console.log('G element bounding box:', gBox);
+      } catch(e) {
+        console.log('Could not get G bounding box:', e.message);
+      }
     }
   } else {
     console.error('SVG element not found in verticalSVG string');
