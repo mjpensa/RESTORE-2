@@ -9,6 +9,12 @@
 let verticalSVG = '';
 let footerSVG = '';
 
+/**
+ * Loads vertical and horizontal SVG graphics for the chart decorations.
+ * These SVGs are used for the left border and footer stripe patterns.
+ * @async
+ * @returns {Promise<void>}
+ */
 async function loadSVGs() {
   try {
     const [verticalResponse, footerResponse] = await Promise.all([
@@ -25,8 +31,81 @@ async function loadSVGs() {
   }
 }
 
+// -------------------------------------------------------------------
+// --- SAFE DOM ACCESS HELPER FUNCTIONS ---
+// -------------------------------------------------------------------
+
+/**
+ * DOM ACCESS STANDARDS:
+ *
+ * 1. Cleanup operations (can silently fail):
+ *    - Use optional chaining: element?.remove()
+ *    - Example: document.getElementById('old-modal')?.remove();
+ *
+ * 2. Required operations (must check and handle):
+ *    - Use safeGetElement() or safeQuerySelector()
+ *    - Check for null and return/handle appropriately
+ *    - Example:
+ *      const modal = safeGetElement('required-modal', 'functionName');
+ *      if (!modal) return; // or handle error
+ *
+ * 3. When to use each pattern:
+ *    - Optional chaining: Removing old elements, optional features
+ *    - Explicit checks: Core functionality, user interactions
+ */
+
+/**
+ * Safely gets DOM element by ID with error logging
+ * @param {string} id - Element ID
+ * @param {string} context - Context for error message (function name)
+ * @returns {HTMLElement|null}
+ */
+function safeGetElement(id, context = '') {
+  const element = document.getElementById(id);
+  if (!element) {
+    console.error(`Element not found: #${id}${context ? ` (in ${context})` : ''}`);
+  }
+  return element;
+}
+
+/**
+ * Safely queries DOM element with error logging
+ * @param {string} selector - CSS selector
+ * @param {string} context - Context for error message (function name)
+ * @returns {HTMLElement|null}
+ */
+function safeQuerySelector(selector, context = '') {
+  const element = document.querySelector(selector);
+  if (!element) {
+    console.error(`Element not found: ${selector}${context ? ` (in ${context})` : ''}`);
+  }
+  return element;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
-  const ganttData = JSON.parse(sessionStorage.getItem('ganttData'));
+  let ganttData = null;
+
+  // Safely parse ganttData from sessionStorage with error handling
+  try {
+    const stored = sessionStorage.getItem('ganttData');
+    if (stored) {
+      ganttData = JSON.parse(stored);
+
+      // Validate structure
+      if (!ganttData || typeof ganttData !== 'object') {
+        throw new Error('Invalid gantt data structure');
+      }
+
+      if (!Array.isArray(ganttData.data) || !ganttData.timeColumns) {
+        throw new Error('Gantt data missing required fields');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to parse ganttData from sessionStorage:', error);
+    // Clear corrupted data
+    sessionStorage.removeItem('ganttData');
+    ganttData = null;
+  }
 
   if (ganttData) {
     // Load SVG graphics before rendering the chart
@@ -39,8 +118,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /**
- * The Dynamic Renderer.
- * This function builds the chart *based* on* the data from sessionStorage.
+ * Dynamically builds and renders the Gantt chart.
+ * Creates the chart structure including title, grid, timeline, tasks, legend,
+ * decorative SVG elements, and export functionality.
+ * @param {Object} ganttData - The chart configuration and data
+ * @param {string} ganttData.title - Chart title
+ * @param {string[]} ganttData.timeColumns - Array of time period labels (e.g., ["Q1 2025", "Q2 2025"])
+ * @param {Array<Object>} ganttData.data - Array of task/swimlane objects
+ * @param {Array<Object>} [ganttData.legend] - Optional legend items
+ * @returns {void}
  */
 function setupChart(ganttData) {
   
@@ -107,14 +193,25 @@ function setupChart(ganttData) {
     svgElement.style.width = '30px';
     svgElement.style.height = 'auto';
 
-    // Clone the SVG multiple times to fill the height
-    // SVG natural height is ~1280px based on paths, clone enough to cover tall charts
-    for (let i = 0; i < 10; i++) {  // 10 copies should cover most charts
+    // Calculate how many SVG clones we actually need
+    // Estimate chart height based on number of rows (tasks + swimlanes)
+    const estimatedRowHeight = 40; // px per task row (approximate)
+    const totalRows = ganttData.data.length + 1; // +1 for header
+    const estimatedChartHeight = totalRows * estimatedRowHeight;
+
+    // SVG natural height is ~1280px based on paths
+    const svgNaturalHeight = 1280;
+    const clonesNeeded = Math.ceil(estimatedChartHeight / svgNaturalHeight);
+
+    // Add small buffer but cap at reasonable max to prevent memory issues
+    const clonesToCreate = Math.min(clonesNeeded + 1, 15);
+
+    for (let i = 0; i < clonesToCreate; i++) {
       const clone = svgElement.cloneNode(true);
       verticalSvgWrapper.appendChild(clone);
     }
 
-    console.log('Vertical SVG inserted with 10 clones for repeating pattern');
+    console.log(`Vertical SVG inserted with ${clonesToCreate} clones (calculated from ${totalRows} rows)`);
   }
 
   chartWrapper.appendChild(verticalSvgWrapper);
@@ -252,8 +349,10 @@ function setupChart(ganttData) {
 }
 
 /**
- * Finds the export button and chart container, then
- * adds a click listener to trigger html2canvas.
+ * Adds export functionality to the chart.
+ * Finds the export button and chart container, then adds a click listener
+ * that uses html2canvas to generate and download a PNG image of the chart.
+ * @returns {void}
  */
 function addExportListener() {
   const exportBtn = document.getElementById('export-png-btn');
@@ -295,9 +394,12 @@ function addExportListener() {
 
 /**
  * Calculates and adds the "Today" line to the grid.
- * @param {HTMLElement} gridEl - The main .gantt-grid element.
- * @param {string[]} timeColumns - The array of time columns (e.g., ["Q1 2025", ...]).
- * @param {Date} today - The current date object.
+ * The line is positioned based on the current date's location within the timeline.
+ * Supports Year, Quarter, Month, and Week granularities.
+ * @param {HTMLElement} gridEl - The main .gantt-grid element
+ * @param {string[]} timeColumns - The array of time columns (e.g., ["Q1 2025", "Q2 2025"])
+ * @param {Date} today - The current date object
+ * @returns {void}
  */
 function addTodayLine(gridEl, timeColumns, today) {
   const position = findTodayColumnPosition(today, timeColumns);
@@ -348,9 +450,11 @@ function addTodayLine(gridEl, timeColumns, today) {
 
 /**
  * Finds the column index and percentage offset for today's date.
- * @param {Date} today - The current date.
- * @param {string[]} timeColumns - The array of time columns.
- * @returns {{index: number, percentage: number} | null}
+ * Analyzes the time column format to determine granularity (Year/Quarter/Month/Week),
+ * then calculates where today falls within that column.
+ * @param {Date} today - The current date
+ * @param {string[]} timeColumns - The array of time columns (determines format)
+ * @returns {{index: number, percentage: number}|null} Position object with column index and percentage offset, or null if not found
  */
 function findTodayColumnPosition(today, timeColumns) {
   if (timeColumns.length === 0) return null;
@@ -419,8 +523,10 @@ function findTodayColumnPosition(today, timeColumns) {
 
 /**
  * Gets the ISO 8601 week number for a given date.
- * @param {Date} date - The date.
-S @returns {number} The week number.
+ * ISO 8601 weeks start on Monday and the first week of the year
+ * contains the first Thursday of the year.
+ * @param {Date} date - The date to get the week number for
+ * @returns {number} The ISO 8601 week number (1-53)
  */
 function getWeek(date) {
   var d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -436,8 +542,14 @@ function getWeek(date) {
 // -------------------------------------------------------------------
 
 /**
- * Creates and shows the analysis modal.
- * Fetches data from the new /get-task-analysis endpoint.
+ * Creates and displays a modal with detailed task analysis.
+ * Fetches analysis data from the /get-task-analysis endpoint and renders it
+ * in a modal dialog. Includes facts, assumptions, dates, status, and a chat interface.
+ * @async
+ * @param {Object} taskIdentifier - Task identification object
+ * @param {string} taskIdentifier.taskName - Name of the task to analyze
+ * @param {string} taskIdentifier.entity - Entity/organization associated with the task
+ * @returns {Promise<void>}
  */
 async function showAnalysisModal(taskIdentifier) {
   // 1. Remove any old modal
@@ -457,7 +569,7 @@ async function showAnalysisModal(taskIdentifier) {
       <button class="modal-close" id="modal-close-btn">&times;</button>
     </div>
     <div class="modal-body" id="modal-body-content">
-      <div classs="modal-spinner"></div>
+      <div class="modal-spinner"></div>
     </div>
   `;
   
@@ -467,11 +579,12 @@ async function showAnalysisModal(taskIdentifier) {
   // 3. Add close listeners
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) {
-      modalOverlay.remove();
+      modalOverlay?.remove(); // Optional chaining for cleanup
     }
   });
-  document.getElementById('modal-close-btn').addEventListener('click', () => {
-    modalOverlay.remove();
+  const closeBtn = document.getElementById('modal-close-btn');
+  closeBtn?.addEventListener('click', () => {
+    modalOverlay?.remove(); // Optional chaining for cleanup
   });
 
   // 4. Fetch the analysis data
@@ -483,23 +596,39 @@ async function showAnalysisModal(taskIdentifier) {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || "Server error");
+      // Handle non-JSON error responses gracefully
+      let errorMessage = `Server error: ${response.status}`;
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const err = await response.json();
+          errorMessage = err.error || errorMessage;
+        } else {
+          const text = await response.text();
+          errorMessage = text.substring(0, 200) || errorMessage; // Limit error length
+        }
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
     }
 
     const analysis = await response.json();
-    const modalBody = document.getElementById('modal-body-content');
+    const modalBody = safeGetElement('modal-body-content', 'showAnalysisModal');
+    if (!modalBody) return;
 
-    // 5. Populate the modal with the analysis
-    document.querySelector('.modal-title').textContent = analysis.taskName;
-    modalBody.innerHTML = `
-      ${buildAnalysisSection('Status', `<span class="status-pill status-${analysis.status.replace(/\s+/g, '-').toLowerCase()}">${analysis.status}</span>`)}
-      ${buildAnalysisSection('Dates', `${analysis.startDate || 'N/A'} to ${analysis.endDate || 'N/A'}`)}
+    // 5. Populate the modal with the analysis (sanitized to prevent XSS)
+    const modalTitle = safeQuerySelector('.modal-title', 'showAnalysisModal');
+    if (modalTitle) modalTitle.textContent = analysis.taskName;
+    const analysisHTML = `
+      ${buildAnalysisSection('Status', `<span class="status-pill status-${analysis.status.replace(/\s+/g, '-').toLowerCase()}">${DOMPurify.sanitize(analysis.status)}</span>`)}
+      ${buildAnalysisSection('Dates', `${DOMPurify.sanitize(analysis.startDate || 'N/A')} to ${DOMPurify.sanitize(analysis.endDate || 'N/A')}`)}
       ${buildAnalysisList('Facts', analysis.facts, 'fact', 'source')}
       ${buildAnalysisList('Assumptions', analysis.assumptions, 'assumption', 'source')}
       ${buildAnalysisSection('Summary', analysis.summary)}
       ${buildAnalysisSection('Rationale / Hurdles', analysis.rationale)}
     `;
+    modalBody.innerHTML = DOMPurify.sanitize(analysisHTML);
 
     // 6. --- NEW: Add the chat interface ---
     const chatContainer = document.createElement('div');
@@ -523,24 +652,39 @@ async function showAnalysisModal(taskIdentifier) {
 
   } catch (error) {
     console.error("Error fetching analysis:", error);
-    // --- FIX: Correctly close the innerHTML string ---
-    document.getElementById('modal-body-content').innerHTML = `<div class="modal-error">Failed to load analysis: ${error.message}</div>`;
+    // Use DOM methods to prevent XSS in error display
+    const modalBody = document.getElementById('modal-body-content');
+    if (modalBody) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'modal-error';
+      errorDiv.textContent = `Failed to load analysis: ${error.message}`;
+      modalBody.innerHTML = '';
+      modalBody.appendChild(errorDiv);
+    }
   }
-} // --- FIX: Added closing brace for showAnalysisModal ---
+}
 
 /**
  * Handles the "Send" button click in the chat modal.
+ * Sends the user's question to the /ask-question endpoint and displays
+ * the response in the chat history. Implements proper error handling and
+ * state management (disables UI during request, clears input only on success).
+ * @async
+ * @param {Object} taskIdentifier - Task identification object
+ * @param {string} taskIdentifier.taskName - Name of the task
+ * @param {string} taskIdentifier.entity - Entity associated with the task
+ * @returns {Promise<void>}
  */
 async function handleAskQuestion(taskIdentifier) {
-  const input = document.getElementById('chat-input');
-  const history = document.getElementById('chat-history');
-  const sendBtn = document.querySelector('.chat-send-btn');
-  const question = input.value.trim();
+  const input = safeGetElement('chat-input', 'handleAskQuestion');
+  const sendBtn = safeQuerySelector('.chat-send-btn', 'handleAskQuestion');
 
+  if (!input || !sendBtn) return;
+
+  const question = input.value.trim();
   if (!question) return;
 
-  // 1. Disable UI
-  input.value = '';
+  // 1. Disable UI (but don't clear input yet - only clear on success)
   input.disabled = true;
   sendBtn.disabled = true;
 
@@ -550,7 +694,7 @@ async function handleAskQuestion(taskIdentifier) {
   // 3. Add spinner for LLM response
   const spinnerId = `spinner-${Date.now()}`;
   addMessageToHistory('<div class="chat-spinner"></div>', 'llm', spinnerId);
-  
+
   try {
     // 4. Call the /ask-question endpoint
     const response = await fetch('/ask-question', {
@@ -563,50 +707,94 @@ async function handleAskQuestion(taskIdentifier) {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || "Server error");
+      // Handle non-JSON error responses gracefully
+      let errorMessage = `Server error: ${response.status}`;
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const err = await response.json();
+          errorMessage = err.error || errorMessage;
+        } else {
+          const text = await response.text();
+          errorMessage = text.substring(0, 200) || errorMessage; // Limit error length
+        }
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    
-    // 5. Replace spinner with answer
+
+    // 5. Replace spinner with answer (sanitized to prevent XSS)
     const spinnerEl = document.getElementById(spinnerId);
     if (spinnerEl) {
-      spinnerEl.innerHTML = data.answer; // Replace spinner content with answer
+      spinnerEl.innerHTML = DOMPurify.sanitize(data.answer); // Sanitize LLM response
     } else {
       addMessageToHistory(data.answer, 'llm'); // Fallback
+    }
+
+    // 6. Clear input only on success
+    if (input) {
+      input.value = '';
     }
     
   } catch (error) {
     console.error("Error asking question:", error);
-    // Replace spinner with error
+    // Replace spinner with error (using DOM methods to prevent XSS)
     const spinnerEl = document.getElementById(spinnerId);
-    const errorMsg = `<span style="color: #BA3930;">Error: ${error.message}</span>`;
+    const errorSpan = document.createElement('span');
+    errorSpan.style.color = '#BA3930';
+    errorSpan.textContent = `Error: ${error.message}`;
     if (spinnerEl) {
-      spinnerEl.innerHTML = errorMsg;
+      spinnerEl.innerHTML = ''; // Clear spinner
+      spinnerEl.appendChild(errorSpan);
     } else {
-      addMessageToHistory(errorMsg, 'llm'); // Fallback
+      // Fallback - add error as new message
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'chat-message chat-message-llm';
+      errorDiv.appendChild(errorSpan);
+      const history = document.getElementById('chat-history');
+      if (history) history.appendChild(errorDiv);
     }
   } finally {
-    // 6. Re-enable UI
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.focus();
+    // 6. Re-enable UI (with null checks)
+    if (input) {
+      input.disabled = false;
+      input.focus();
+    }
+    if (sendBtn) {
+      sendBtn.disabled = false;
+    }
   }
 }
 
 /**
  * Helper to add a message to the chat history UI.
+ * Sanitizes content based on message type to prevent XSS.
  */
 function addMessageToHistory(content, type, id = null) {
   const history = document.getElementById('chat-history');
+  if (!history) return; // Safety check
+
   const msg = document.createElement('div');
   msg.className = `chat-message chat-message-${type}`;
   if (id) {
     msg.id = id;
   }
-  msg.innerHTML = content;
-  
+
+  // Sanitize content based on sender type
+  if (type === 'llm') {
+    // LLM responses may have legitimate formatting, use DOMPurify
+    msg.innerHTML = DOMPurify.sanitize(content);
+  } else if (type === 'user') {
+    // User messages should never have HTML
+    msg.textContent = content;
+  } else {
+    // For other types (like spinner HTML), trust it if it comes from our code
+    msg.innerHTML = content;
+  }
+
   history.appendChild(msg);
   // Scroll to bottom
   history.scrollTop = history.scrollHeight;
@@ -618,15 +806,35 @@ function addMessageToHistory(content, type, id = null) {
 // -------------------------------------------------------------------
 
 /**
+ * Validates that a URL is safe (only http/https protocols).
+ * Prevents javascript: and other dangerous protocols.
+ * @param {string} url - The URL to validate
+ * @returns {boolean} - True if URL is safe
+ */
+function isSafeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch (e) {
+    return false; // Invalid URL
+  }
+}
+
+/**
  * Builds an HTML string for a <section> in the modal.
  * Skips if content is null or empty.
+ * Content is sanitized to prevent XSS.
  */
 function buildAnalysisSection(title, content) {
   if (!content) return '';
+  // Sanitize title and content
+  const safeTitle = DOMPurify.sanitize(title);
+  const safeContent = DOMPurify.sanitize(content);
   return `
     <div class="analysis-section">
-      <h4>${title}</h4>
-      <p>${content}</p>
+      <h4>${safeTitle}</h4>
+      <p>${safeContent}</p>
     </div>
   `;
 }
@@ -634,28 +842,33 @@ function buildAnalysisSection(title, content) {
 /**
  * Builds an HTML string for a <ul> of facts/assumptions.
  * Skips if list is null or empty.
+ * Content is sanitized to prevent XSS.
  */
 function buildAnalysisList(title, items, itemKey, sourceKey) {
   if (!items || items.length === 0) return '';
-  
+
   const listItems = items.map(item => {
-    let sourceText = item[sourceKey] || 'Source not available';
-    // If URL is present, make the source a link
-    if (item.url) {
-      sourceText = `<a href="${item.url}" target="_blank" rel="noopener noreferrer">${sourceText}</a>`;
+    const itemText = DOMPurify.sanitize(item[itemKey] || '');
+    let sourceText = DOMPurify.sanitize(item[sourceKey] || 'Source not available');
+
+    // If URL is present, validate and make the source a link
+    if (item.url && isSafeUrl(item.url)) {
+      const safeUrl = DOMPurify.sanitize(item.url);
+      sourceText = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${sourceText}</a>`;
     }
-    
+
     return `
       <li>
-        <p>${item[itemKey]}</p>
+        <p>${itemText}</p>
         <p class="source">${sourceText}</p>
       </li>
     `;
   }).join('');
-  
+
+  const safeTitle = DOMPurify.sanitize(title);
   return `
     <div class="analysis-section">
-      <h4>${title}</h4>
+      <h4>${safeTitle}</h4>
       <ul class="analysis-list">
         ${listItems}
       </ul>
@@ -664,7 +877,12 @@ function buildAnalysisList(title, items, itemKey, sourceKey) {
 }
 
 /**
- * Builds the HTML legend element.
+ * Builds the HTML legend element for the Gantt chart.
+ * Creates a visual legend showing color-coded categories and their meanings.
+ * @param {Array<Object>} legendData - Array of legend items
+ * @param {string} legendData[].color - Color identifier for the legend item
+ * @param {string} legendData[].label - Text label for the legend item
+ * @returns {HTMLElement} The constructed legend DOM element
  */
 function buildLegend(legendData) {
   const legendContainer = document.createElement('div');
