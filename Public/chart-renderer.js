@@ -742,8 +742,14 @@ function setupChart(ganttData) {
   verticalSvgWrapper.style.backgroundColor = 'red';
   verticalSvgWrapper.style.border = '3px solid yellow';
 
+  // TEST: Try a simple SVG first
+  const testSVG = `<svg width="30" height="100%" viewBox="0 0 30 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="30" height="100" fill="blue"/>
+    <text x="15" y="50" fill="white" font-size="12" text-anchor="middle">TEST</text>
+  </svg>`;
+
   // Insert the SVG directly as HTML
-  verticalSvgWrapper.innerHTML = verticalSVG;
+  verticalSvgWrapper.innerHTML = testSVG;  // Using test SVG for now
 
   // Style the SVG element inside
   const svgElement = verticalSvgWrapper.querySelector('svg');
@@ -753,11 +759,11 @@ function setupChart(ganttData) {
     svgElement.style.display = 'block';
     svgElement.style.width = '100%';
     svgElement.style.height = '100%';
-    console.log('Vertical SVG element created and styled');
+    console.log('TEST SVG element created and styled');
     console.log('SVG viewBox:', svgElement.getAttribute('viewBox'));
-    console.log('Wrapper computed styles:', window.getComputedStyle(verticalSvgWrapper));
+    console.log('SVG innerHTML:', svgElement.innerHTML.substring(0, 200));
   } else {
-    console.error('SVG element not found in verticalSVG string');
+    console.error('SVG element not found');
   }
 
   chartWrapper.appendChild(verticalSvgWrapper);
