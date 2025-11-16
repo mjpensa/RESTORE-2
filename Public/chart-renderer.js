@@ -736,7 +736,11 @@ function setupChart(ganttData) {
   verticalSvgWrapper.style.bottom = '0';
   verticalSvgWrapper.style.width = '30px';
   verticalSvgWrapper.style.zIndex = '5';
-  verticalSvgWrapper.style.overflow = 'hidden';
+  verticalSvgWrapper.style.overflow = 'visible';  // Changed from hidden to visible for debugging
+
+  // DEBUG: Make the wrapper very visible
+  verticalSvgWrapper.style.backgroundColor = 'red';
+  verticalSvgWrapper.style.border = '3px solid yellow';
 
   // Insert the SVG directly as HTML
   verticalSvgWrapper.innerHTML = verticalSVG;
@@ -751,6 +755,7 @@ function setupChart(ganttData) {
     svgElement.style.height = '100%';
     console.log('Vertical SVG element created and styled');
     console.log('SVG viewBox:', svgElement.getAttribute('viewBox'));
+    console.log('Wrapper computed styles:', window.getComputedStyle(verticalSvgWrapper));
   } else {
     console.error('SVG element not found in verticalSVG string');
   }
